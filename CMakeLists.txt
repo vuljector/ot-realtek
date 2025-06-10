@@ -36,7 +36,7 @@ if(${BUILD_TARGET} STREQUAL "rtl8777g")
 set(RT_PLATFORM "bee4" CACHE STRING "")
 endif()
 
-set(bee_matter_root "${MATTER_EXAMPLE_PATH}/../../..")
+set(bee_matter_root "${MATTER_EXAMPLE_PATH}/../../../..")
 
 set(ENV{MATTER_ENABLE_MED} 0)
 set(matter_enable_factory_data 0)
@@ -174,7 +174,7 @@ include(${bee_lwip_path}/lwip.cmake)
 include(includepath.cmake)
 include(${CHIP_ROOT}/src/app/chip_data_model.cmake)
 include(${matter_example_path}/chip_main.cmake)
-include(${CHIP_ROOT}/config/realtek_bee/chip.cmake)
+include(${CHIP_ROOT}/config/realtek/bee/chip.cmake)
 
 add_dependencies(chip_main chip-gn)
 endif()
