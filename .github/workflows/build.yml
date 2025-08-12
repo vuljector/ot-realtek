@@ -52,7 +52,7 @@ jobs:
             gcc_download_url: https://developer.arm.com/-/media/Files/downloads/gnu/12.2.rel1/binrel/arm-gnu-toolchain-12.2.rel1-x86_64-arm-none-eabi.tar.xz
             gcc_extract_dir: arm-gnu-toolchain-12.2.rel1-x86_64-arm-none-eabi
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: true
     - name: Bootstrap
