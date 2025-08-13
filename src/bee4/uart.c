@@ -385,6 +385,8 @@ void CdcRecvDataCb(void *handle, void *buf, uint32_t len, int status)
     else
 #endif
     {
+        uint8_t *recv = (uint8_t *)buf;
+
 #if MATTER_ENABLE_CFU
         extern void matter_ble_send_msg(uint16_t sub_type, uint32_t param);
 
@@ -392,10 +394,13 @@ void CdcRecvDataCb(void *handle, void *buf, uint32_t len, int status)
 #define MATTER_BLE_MSG_ENTER_CFU 0xA0
         if (len == ENTER_CFU_MODE_DATA_LEN)
         {
-            matter_ble_send_msg(MATTER_BLE_MSG_ENTER_CFU, 0);
+            if (recv[0] == 0x7e && recv[1] == 0x85)
+            {
+                matter_ble_send_msg(MATTER_BLE_MSG_ENTER_CFU, 0);
+            }
         }
 #endif
-        uint8_t *recv = (uint8_t *)buf;
+
         for (uint32_t i = 0; i < len; i++)
         {
             rx_buffer[rx_tail] = recv[i];
@@ -451,10 +456,10 @@ void app_usb_spd_cb(uint8_t speed)
 }
 
 static char hex_str[29] = {0};
-void convert_euid_to_hex_string() 
+void convert_euid_to_hex_string()
 {
-    const uint8_t* euid_ptr = get_ic_euid();
-    for (int i = 0; i < 14; i++) 
+    const uint8_t *euid_ptr = get_ic_euid();
+    for (int i = 0; i < 14; i++)
     {
         snprintf(&hex_str[i * 2], 3, "%02x", euid_ptr[i]);
     }
@@ -671,6 +676,10 @@ void BEE_UartRx(void)
 
 #else // BUILD_USB
 
+#if defined(DLPS_EN) && (DLPS_EN == 1)
+extern void io_uart_dlps_allow_enter(void);
+#endif
+
 #define UART_TX_GDMA_CHANNEL_NUM        GDMA_CH_NUM4
 #define UART_TX_GDMA_CHANNEL            GDMA_Channel4
 #define UART_TX_GDMA_CHANNEL_IRQN       GDMA_Channel4_IRQn
@@ -763,7 +772,18 @@ void uart_init_internal(void)
         UART_InitStruct.UART_HardwareFlowControl   = UART_HW_FLOW_CTRL_ENABLE;
     }
 #endif
+#if defined(DLPS_EN) && (DLPS_EN == 1)
+    UART_InitStruct.rxTriggerLevel = 1;
+    UART_InitStruct.UART_IdleTime       = UART_RX_IDLE_1BYTE;      //idle interrupt wait time
+    UART_Init(OT_UART, &UART_InitStruct);
 
+    UART_INTConfig(OT_UART, UART_INT_RD_AVA, ENABLE);
+    NVIC_InitStruct.NVIC_IRQChannel = OT_UART_IRQN;
+    NVIC_InitStruct.NVIC_IRQChannelCmd = (FunctionalState)ENABLE;
+    NVIC_InitStruct.NVIC_IRQChannelPriority = 3;
+    NVIC_Init(&NVIC_InitStruct);
+    RamVectorTableUpdate_ext(OT_UART_VECTORn, OT_UARTIntHandler);
+#else
     UART_InitStruct.rxTriggerLevel = 16;
     UART_InitStruct.UART_IdleTime       = UART_RX_IDLE_1BYTE;      //idle interrupt wait time
     UART_InitStruct.UART_DmaEn          = UART_DMA_ENABLE;
@@ -798,7 +818,7 @@ void uart_init_internal(void)
     GDMA_InitStruct.GDMA_DestHandshake    = GDMA_Handshake_UART3_TX;
     GDMA_InitStruct.GDMA_ChannelPriority  = 2;
     GDMA_Init(UART_TX_GDMA_CHANNEL, &GDMA_InitStruct);
-#if 1
+
     /*-----------------GDMA IRQ init-------------------*/
     GDMA_INTConfig(UART_TX_GDMA_CHANNEL_NUM, GDMA_INT_Transfer, ENABLE);
     NVIC_InitStruct.NVIC_IRQChannel = UART_TX_GDMA_CHANNEL_IRQN;
@@ -822,17 +842,28 @@ otError otPlatUartDisable(void)
 
 void uart_send(const uint8_t *aBuf, uint16_t aBufLength)
 {
+#if defined(DLPS_EN) && (DLPS_EN == 1)
+    for (uint16_t i = 0; i < aBufLength; i++)
+    {
+        UART_SendByte(OT_UART, aBuf[i]);
+        while (UART_GetFlagStatus(OT_UART, UART_FLAG_TX_EMPTY) != SET);
+    }
+#else
     GDMA_SetSourceAddress(UART_TX_GDMA_CHANNEL, (uint32_t)aBuf);
     GDMA_SetDestinationAddress(UART_TX_GDMA_CHANNEL, (uint32_t) & (OT_UART->UART_RBR_THR));
     GDMA_SetBufferSize(UART_TX_GDMA_CHANNEL, aBufLength);
     GDMA_Cmd(UART_TX_GDMA_CHANNEL_NUM, ENABLE);
     os_sem_take(uart_tx_sem, 0xffffffff);
+#endif
 }
 
 otError otPlatUartSend(const uint8_t *aBuf, uint16_t aBufLength)
 {
     uart_send(aBuf, aBufLength);
     otPlatUartSendDone();
+#if defined(DLPS_EN) && (DLPS_EN == 1)
+    io_uart_dlps_allow_enter();
+#endif
     return OT_ERROR_NONE;
 }
 
@@ -891,6 +922,9 @@ void BEE_UartRx(void)
             otPlatUartReceived(&rx_buffer[rx_head], tail - rx_head);
             rx_head = tail;
         }
+#if defined(DLPS_EN) && (DLPS_EN == 1)
+        io_uart_dlps_allow_enter();
+#endif
     }
 }
 #endif // (ENABLE_PW_RPC == 1)
@@ -903,6 +937,32 @@ APP_RAM_TEXT_SECTION void UART_TX_GDMA_Handler(void)
 
 APP_RAM_TEXT_SECTION void OT_UARTIntHandler(void)
 {
+#if defined(DLPS_EN) && (DLPS_EN == 1)
+    uint32_t int_status = UART_GetIID(OT_UART);
+    uint16_t len;
+
+    UART_INTConfig(OT_UART, UART_INT_RD_AVA, DISABLE);
+    switch (int_status & 0x0E)
+    {
+    case UART_INT_ID_RX_LEVEL_REACH:
+    case UART_INT_ID_RX_DATA_TIMEOUT:
+        len = UART_GetRxFIFODataLen(OT_UART);
+        for (uint16_t i = 0; i < len; i++)
+        {
+            rx_buffer[rx_tail] = OT_UART->UART_RBR_THR;
+            rx_tail = (rx_tail + 1) % kReceiveBufferSize;
+        }
+        curr_rx_tail = rx_tail;
+        BEE_EventSend(UART_RX, 0);
+        otSysEventSignalPending();
+        break;
+
+    default:
+        break;
+    }
+
+    UART_INTConfig(OT_UART, UART_INT_RD_AVA, ENABLE);
+#else
     uint32_t int_status = UART_GetIID(OT_UART);
     uint16_t len;
 
@@ -942,6 +1002,7 @@ APP_RAM_TEXT_SECTION void OT_UARTIntHandler(void)
     }
 
     UART_INTConfig(OT_UART, UART_INT_RD_AVA, ENABLE);
+#endif
 }
 #endif // BUILD_USB
 

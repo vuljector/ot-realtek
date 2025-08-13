@@ -152,6 +152,7 @@ extern "C" {
 #endif
 #define USE_UART4_DLPS       0
 #define USE_UART5_DLPS       0
+#define USE_PKE_DLPS         1
 
 /* do not modify USE_IO_DRIVER_DLPS macro */
 #define USE_IO_DRIVER_DLPS  (USE_ADC_DLPS | USE_ENHTIM_DLPS | USE_GPIOA_DLPS | USE_GPIOB_DLPS \
@@ -173,6 +174,13 @@ extern "C" {
 #define  TEST_GPIO         4
 
 #define  TEST_INTERRUPT             0 //TEST_UART //TEST_HW_TIMER // TEST_LPC // TEST_GPIO
+
+#define APP_WAKEUP_REASON_NONE          0
+#define APP_WAKEUP_REASON_BUTTON_SW1    1
+#define APP_WAKEUP_REASON_BUTTON_SW2    2
+#define APP_WAKEUP_REASON_BUTTON_SW3    3
+#define APP_WAKEUP_REASON_BUTTON_SW4    4
+#define APP_WAKEUP_REASON_UART_RX       5
 
 #ifdef __cplusplus
 }

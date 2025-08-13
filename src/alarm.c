@@ -51,14 +51,15 @@ void BEE_AlarmInit(void)
 
 //volatile bool micro_alarm_fired[MAX_PAN_NUM];
 volatile uint64_t micro_alarm_us[MAX_PAN_NUM];
+volatile uint32_t micro_alarm_btclk_us[MAX_PAN_NUM];
 
 APP_RAM_TEXT_SECTION void micro_handler(uint8_t pan_idx)
 {
     if (micro_alarm_us[pan_idx] > 0)
     {
         BEE_EventSend(ALARM_US, pan_idx);
-        if (pan_idx == 0) otSysEventSignalPending();
-        else zbSysEventSignalPending();
+        if (pan_idx == 0) { otSysEventSignalPending(); }
+        else { zbSysEventSignalPending(); }
     }
 }
 
@@ -85,11 +86,13 @@ void otPlatAlarmMicroStartAt(otInstance *aInstance, uint32_t t0, uint32_t dt)
         {
             micro_alarm_us[pan_idx] = target_us;
             diff = target_us - now;
-            mac_SetBTClkUSInt(MAC_BT_TIMER1, curr_us+diff);
+            micro_alarm_btclk_us[pan_idx] = (curr_us + diff) % MAX_BT_CLOCK_COUNTER;
+            mac_SetBTClkUSInt(MAC_BT_TIMER1, micro_alarm_btclk_us[pan_idx]);
         }
         else
         {
             micro_alarm_us[pan_idx] = 0;
+            micro_alarm_btclk_us[pan_idx] = 0;
             BEE_EventSend(ALARM_US, pan_idx);
         }
     }
@@ -100,11 +103,13 @@ void otPlatAlarmMicroStartAt(otInstance *aInstance, uint32_t t0, uint32_t dt)
         {
             micro_alarm_us[pan_idx] = target_us;
             diff = target_us - now;
-            mac_SetBTClkUSInt(MAC_BT_TIMER5, curr_us+diff);
+            micro_alarm_btclk_us[pan_idx] = (curr_us + diff) % MAX_BT_CLOCK_COUNTER;
+            mac_SetBTClkUSInt(MAC_BT_TIMER5, micro_alarm_btclk_us[pan_idx]);
         }
         else
         {
             micro_alarm_us[pan_idx] = 0;
+            micro_alarm_btclk_us[pan_idx] = 0;
             BEE_EventSend(ALARM_US, pan_idx);
         }
     }
@@ -116,18 +121,20 @@ void otPlatAlarmMicroStop(otInstance *aInstance)
     uint8_t pan_idx = mpan_GetCurrentPANIdx();
     OT_UNUSED_VARIABLE(aInstance);
     micro_alarm_us[pan_idx] = 0;
+    micro_alarm_btclk_us[pan_idx] = 0;
 }
 
 //volatile bool milli_alarm_fired[MAX_PAN_NUM];
 volatile uint64_t milli_alarm_us[MAX_PAN_NUM];
+volatile uint32_t milli_alarm_btclk_us[MAX_PAN_NUM];
 
 APP_RAM_TEXT_SECTION void milli_handler(uint8_t pan_idx)
 {
     if (milli_alarm_us[pan_idx] > 0)
     {
         BEE_EventSend(ALARM_MS, pan_idx);
-        if (pan_idx == 0) otSysEventSignalPending();
-        else zbSysEventSignalPending();
+        if (pan_idx == 0) { otSysEventSignalPending(); }
+        else { zbSysEventSignalPending(); }
     }
 }
 
@@ -141,9 +148,10 @@ void otPlatAlarmMilliStartAt(otInstance *aInstance, uint32_t t0, uint32_t dt)
     uint8_t pan_idx = mpan_GetCurrentPANIdx();
     uint64_t now;
     uint32_t curr_us;
-    uint64_t target_us;
     uint64_t now_ms;
     uint64_t target_ms = mac_ConvertT0AndDtTo64BitTime(t0, dt, &now_ms);
+    uint32_t diff_ms;
+    uint64_t target_us;
     uint32_t diff;
     uint32_t s = os_lock();
     curr_us = mac_GetCurrentBTUS();
@@ -151,18 +159,21 @@ void otPlatAlarmMilliStartAt(otInstance *aInstance, uint32_t t0, uint32_t dt)
     os_unlock(s);
     now_ms = now / 1000;
     target_ms = mac_ConvertT0AndDtTo64BitTime(t0, dt, &now_ms);
-    target_us = target_ms*1000;
     if (pan_idx == 0)
     {
-        if (target_us > now)
+        if (target_ms > now_ms)
         {
+            diff_ms = target_ms - now_ms;
+            diff = diff_ms * 1000;
+            target_us = now + diff;
             milli_alarm_us[pan_idx] = target_us;
-            diff = target_us - now;
-            mac_SetBTClkUSInt(MAC_BT_TIMER0, curr_us+diff);
+            milli_alarm_btclk_us[pan_idx] = (curr_us + diff) % MAX_BT_CLOCK_COUNTER;
+            mac_SetBTClkUSInt(MAC_BT_TIMER0, milli_alarm_btclk_us[pan_idx]);
         }
         else
         {
             milli_alarm_us[pan_idx] = 0;
+            milli_alarm_btclk_us[pan_idx] = 0;
             BEE_EventSend(ALARM_MS, pan_idx);
         }
     }
@@ -171,13 +182,17 @@ void otPlatAlarmMilliStartAt(otInstance *aInstance, uint32_t t0, uint32_t dt)
     {
         if (target_us > now)
         {
+            diff_ms = target_ms - now_ms;
+            diff = diff_ms * 1000;
+            target_us = now + diff;
             milli_alarm_us[pan_idx] = target_us;
-            diff = target_us - now;
-            mac_SetBTClkUSInt(MAC_BT_TIMER4, curr_us+diff);
+            milli_alarm_btclk_us[pan_idx] = (curr_us + diff) % MAX_BT_CLOCK_COUNTER;
+            mac_SetBTClkUSInt(MAC_BT_TIMER4, milli_alarm_btclk_us[pan_idx]);
         }
         else
         {
             milli_alarm_us[pan_idx] = 0;
+            milli_alarm_btclk_us[pan_idx] = 0;
             BEE_EventSend(ALARM_MS, pan_idx);
         }
     }
@@ -189,12 +204,16 @@ void otPlatAlarmMilliStop(otInstance *aInstance)
     uint8_t pan_idx = mpan_GetCurrentPANIdx();
     OT_UNUSED_VARIABLE(aInstance);
     milli_alarm_us[pan_idx] = 0;
+    milli_alarm_btclk_us[pan_idx] = 0;
 }
 
-#define XTAL_ACCURACY       40
+#define XTAL_ACCURACY 40
 uint16_t otPlatTimeGetXtalAccuracy(void)
 {
+#if DLPS_EN
     return XTAL_ACCURACY;
+#endif
+    return 10;
 }
 
 uint64_t otPlatTimeGet(void)

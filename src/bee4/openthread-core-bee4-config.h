@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2025, The OpenThread Authors.
+ *  Copyright (c) 2016, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -95,7 +95,7 @@
  * Define to 1 if you want to enable software CSMA-CA backoff logic.
  *
  */
-#define OPENTHREAD_CONFIG_MAC_SOFTWARE_CSMA_BACKOFF_ENABLE 1
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_CSMA_BACKOFF_ENABLE 0
 
 /**
  * @def OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_SECURITY_ENABLE
@@ -103,7 +103,7 @@
  * Define to 1 if you want to enable software transmission security logic.
  *
  */
-#define OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_SECURITY_ENABLE 1
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_SECURITY_ENABLE 0
 
 /**
  * @def OPENTHREAD_CONFIG_MAC_SOFTWARE_ENERGY_SCAN_ENABLE
@@ -111,7 +111,7 @@
  * Define to 1 if you want to enable software energy scanning logic.
  *
  */
-#define OPENTHREAD_CONFIG_MAC_SOFTWARE_ENERGY_SCAN_ENABLE 1
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_ENERGY_SCAN_ENABLE 0
 
 /**
  * @def OPENTHREAD_CONFIG_NCP_HDLC_ENABLE
@@ -202,6 +202,9 @@
 #define OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AHEAD 12 * 16
 #endif
 
+#ifndef OPENTHREAD_CONFIG_CLI_MAX_USER_CMD_ENTRIES
+#define OPENTHREAD_CONFIG_CLI_MAX_USER_CMD_ENTRIES 2
+#endif
 
 #endif // OPENTHREAD_CORE_SBEE2_CONFIG_H_
 

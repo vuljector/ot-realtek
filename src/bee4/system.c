@@ -101,12 +101,13 @@ bool otSysPseudoResetWasRequested(void)
     }
 }
 
-#if (ENABLE_CLI == 1 && XMODEM_ENABLE == 1)
+#if (ENABLE_CLI == 1)
 #include <openthread/cli.h>
 #include "common/code_utils.hpp"
 
 static volatile bool user_commands_registered = false;
 
+#if (XMODEM_ENABLE == 1)
 static otError ProcessFirmwareUpdate(void *aContext, uint8_t aArgsLength, char *aArgs[])
 {
     OT_UNUSED_VARIABLE(aContext);
@@ -118,9 +119,89 @@ static otError ProcessFirmwareUpdate(void *aContext, uint8_t aArgsLength, char *
     WDG_SystemReset(RESET_ALL, SW_RESET_APP_END);
     return OT_ERROR_NONE;
 }
+#endif
+#if defined(DLPS_EN) && (DLPS_EN == 1)
+static otError ProcessSleepDirect(void *aContext, uint8_t aArgsLength, char *aArgs[])
+{
+    OT_UNUSED_VARIABLE(aContext);
+    OT_UNUSED_VARIABLE(aArgsLength);
+    OT_UNUSED_VARIABLE(aArgs);
+    BEE_SleepDirect();
+    return OT_ERROR_NONE;
+}
+#if defined(BUILD_MATTER) || defined(BUILD_BLE_PERIPHERAL)
+#if defined(BUILD_MATTER)
+extern void SetMatterBLEAdvEnabled(bool val);
+#endif
+static otError ProcessBleAdvState(void *aContext, uint8_t aArgsLength, char *aArgs[])
+{
+    OT_UNUSED_VARIABLE(aContext);
+    if (aArgsLength == 1)
+    {
+        if (strncmp(aArgs[0], "dis", 3) == 0)
+        {
+#if defined(BUILD_BLE_PERIPHERAL)
+            le_adv_stop();
+#else
+            SetMatterBLEAdvEnabled(false);
+#endif
+        }
+        else if (strncmp(aArgs[0], "en", 2) == 0)
+        {
+#if defined(BUILD_BLE_PERIPHERAL)
+            le_adv_start();
+#else
+            SetMatterBLEAdvEnabled(true);
+#endif
+        }
+        else
+        {
+            otCliOutputFormat("invalid arg");
+        }
+    }
+    return OT_ERROR_NONE;
+}
+#endif
+#if defined(BUILD_MATTER)
+extern void matter_gpio_allow_to_enter_dlps(void);
+extern void SetSystemLedState(bool state);
+static otError ProcessSystemLedState(void *aContext, uint8_t aArgsLength, char *aArgs[])
+{
+    OT_UNUSED_VARIABLE(aContext);
+    if (aArgsLength == 1)
+    {
+        if (strncmp(aArgs[0], "off", 3) == 0)
+        {
+            matter_gpio_allow_to_enter_dlps();
+            SetSystemLedState(false);
+        }
+        else if (strncmp(aArgs[0], "on", 2) == 0)
+        {
+            SetSystemLedState(true);
+        }
+        else
+        {
+            otCliOutputFormat("invalid arg");
+        }
+    }
+    return OT_ERROR_NONE;
+}
+#endif
+#endif
 
 static const otCliCommand rtkCommands[] = {
+#if (XMODEM_ENABLE == 1)
     {"fwupdate", ProcessFirmwareUpdate},
+#endif
+#if defined(DLPS_EN) && (DLPS_EN == 1)
+    {"sleepdirect", ProcessSleepDirect},
+#if defined(BUILD_MATTER) || defined(BUILD_BLE_PERIPHERAL)
+    {"bleadv", ProcessBleAdvState},
+#endif
+#if defined(BUILD_MATTER)
+    {"systemled", ProcessSystemLedState},
+#endif
+#endif
 };
 #endif
 
@@ -128,23 +209,20 @@ void otSysProcessDrivers(otInstance *aInstance)
 {
     uint8_t event;
 
-#if (ENABLE_CLI == 1 && XMODEM_ENABLE == 1)
+#if (ENABLE_CLI == 1)
     if (!user_commands_registered)
     {
         user_commands_registered = true;
         otCliSetUserCommands(rtkCommands, OT_ARRAY_LENGTH(rtkCommands), aInstance);
     }
 #endif
+    BEE_RadioRx(aInstance, 0);
 
     while (ev_item[0].ev_head != ev_item[0].ev_tail)
     {
         event = ev_item[0].ev_queue[ev_item[0].ev_head];
         switch (event)
         {
-            case RX_OK:
-            BEE_RadioRx(aInstance, 0);
-            break;
-
             case TX_DONE:
             BEE_RadioTx(aInstance, 0);
             break;
@@ -171,6 +249,10 @@ void otSysProcessDrivers(otInstance *aInstance)
 
             case SLEEP:
             BEE_SleepProcess(aInstance, 0);
+            break;
+
+            case WAKEUP:
+            BEE_WakeupProcess(aInstance, 0);
             break;
 
             default:
@@ -239,16 +321,13 @@ void zbSysProcessDrivers(otInstance *aInstance)
         otCliSetUserCommands(rtkCommands, OT_ARRAY_LENGTH(rtkCommands), aInstance);
     }
 #endif
+    BEE_RadioRx(aInstance, 1);
 
     while (ev_item[1].ev_head != ev_item[1].ev_tail)
     {
         event = ev_item[1].ev_queue[ev_item[1].ev_head];
         switch (event)
         {
-            case RX_OK:
-            BEE_RadioRx(aInstance, 1);
-            break;
-
             case TX_DONE:
             BEE_RadioTx(aInstance, 1);
             break;
@@ -275,6 +354,10 @@ void zbSysProcessDrivers(otInstance *aInstance)
 
             case SLEEP:
             BEE_SleepProcess(aInstance, 1);
+            break;
+
+            case WAKEUP:
+            BEE_WakeupProcess(aInstance, 1);
             break;
 
             default:

@@ -79,6 +79,8 @@ void *matter_task_handle;   //!< MAC Task handle
 /*============================================================================*
  *                              Functions
  *============================================================================*/
+#if BUILD_NCP
+#else
 #include "mbedtls/threading.h"
 #include "threading_alt.h"
 
@@ -123,6 +125,7 @@ int bee_mutex_unlock(mbedtls_threading_mutex_t *mutex)
         return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
     }
 }
+#endif
 
 extern void uart_init_internal(void);
 extern int main(int argc, char *argv[]);
@@ -130,7 +133,10 @@ extern int main(int argc, char *argv[]);
 void thread_test_task(void *p_param)
 {
     DBG_DIRECT("%s", __func__);
+#if BUILD_NCP
+#else
     mbedtls_threading_set_alt(bee_mutex_init, bee_mutex_free, bee_mutex_lock, bee_mutex_unlock);
+#endif
     uart_init_internal();
     main(0, NULL);
     while (1);

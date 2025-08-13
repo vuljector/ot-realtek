@@ -36,7 +36,8 @@ OT_CMAKE_NINJA_TARGET=${OT_CMAKE_NINJA_TARGET:-}
 #to add more by modify ld
 is_create_ld_gen()
 {
-    local ldgentargets=("rtl8777g")
+    local ldgentargets=("rtl8777g" "rtl8777g_s" "evb" "evb_dual" \
+    "rtl8777g_cert" "rtl8777g_test")
 
     for ldgentarget in "${ldgentargets[@]}"; do
         if [ "${board_target}" == "${ldgentarget}" ]; then
@@ -50,7 +51,7 @@ is_create_ld_gen()
 #modify folder to src/rtl8777g
 is_rtl8777g_signal_target()
 {
-    local is8777gsignaltargets=("rtl8777g")
+    local is8777gsignaltargets=("rtl8777g" "rtl8777g_cert")
 
     for is8777gsignaltarget in "${is8777gsignaltargets[@]}"; do
         if [ "${board_target}" == "${is8777gsignaltarget}" ]; then
@@ -69,7 +70,7 @@ build()
 
     cmake -GNinja -DOT_COMPILE_WARNING_AS_ERROR=ON "$@" "${OT_SRCDIR}"
 
-    if (( ${#OT_CMAKE_NINJA_TARGET[@]} > 0 )); then
+    if [[ -n ${OT_CMAKE_NINJA_TARGET[*]} ]]; then
         ninja "${OT_CMAKE_NINJA_TARGET[@]}"
     else
         ninja 
@@ -123,27 +124,75 @@ main()
     options+=("-DCMAKE_BUILD_TYPE=Release")
     case "${platform}" in
         bee4)
-        options+=("-DOT_NCP_VENDOR_HOOK_SOURCE=$PWD/src/${platform}/example_vendor_hook.cpp")
         options+=("-DRT_PLATFORM=${platform}")
         options+=("-DBUILD_BOARD_TARGET=${board_target}")
         options+=("-DBUILD_TARGET=${target}")
         case "${OT_CMAKE_NINJA_TARGET}" in
             ot-cli-ftd | ot-cli-mtd)
-                cd "${OT_SRCDIR}/openthread" && git checkout 2aeb8b8 && cd "${OT_SRCDIR}"
+                cd ${OT_SRCDIR}/openthread && git checkout 2aeb8b8 && cd ${OT_SRCDIR}
                 options+=("-DCMAKE_TOOLCHAIN_FILE=src/${platform}/arm-none-eabi.cmake")
                 options+=("-DENABLE_CLI=ON")
+                case "${build_type}" in
+                    sdk)
+                        options+=("-DOT_EXTERNAL_MBEDTLS=bee4-mbedtls")
+                        ;;
+                esac
+                ;;
+            ot-ncp-ftd | ot-ncp-mtd)
+                #cd ${OT_SRCDIR}/openthread && git checkout main && git pull && cd ${OT_SRCDIR}
+                options+=("-DCMAKE_TOOLCHAIN_FILE=src/${platform}/arm-none-eabi-ncp.cmake")
+                options+=("-DENABLE_CLI=OFF")
+                options+=("-DOT_BORDER_ROUTER=ON"
+                          "-DOT_CSL_RECEIVER=ON"
+                          "-DOT_ECDSA=ON"
+                          "-DOT_RCP_RESTORATION_MAX_COUNT=2"
+                          "-DOT_RCP_TX_WAIT_TIME_SECS=5"
+                          "-DOT_SERVICE=ON"
+                          "-DOT_SLAAC=ON")
                 ;;
             ot-rcp)
-                cd "${OT_SRCDIR}/openthread" && git checkout 2aeb8b8 && cd "${OT_SRCDIR}"
+                cd ${OT_SRCDIR}/openthread && git checkout 2aeb8b8 && cd ${OT_SRCDIR}
                 options+=("-DCMAKE_TOOLCHAIN_FILE=src/${platform}/arm-none-eabi.cmake")
                 options+=("-DENABLE_CLI=OFF -DOT_DNSSD_SERVER=ON -DOT_SRP_SERVER=ON")
+                options+=("-DOT_NCP_VENDOR_HOOK_SOURCE=$PWD/src/${platform}/example_vendor_hook.cpp")
+                case "${build_type}" in
+                    sdk)
+                        options+=("-DOT_EXTERNAL_MBEDTLS=bee4-mbedtls")
+                        ;;
+                esac
                 ;;
             *)
                 ;;
         esac
-        case "${build_type}" in
-            sdk)
-                options+=("-DOT_EXTERNAL_MBEDTLS=bee4-mbedtls")
+        options+=("-DOT_CMAKE_NINJA_TARGET=${OT_CMAKE_NINJA_TARGET}")
+        ;;
+        bee3plus)
+        options+=("-DCMAKE_TOOLCHAIN_FILE=src/${platform}/arm-none-eabi.cmake")
+        options+=("-DRT_PLATFORM=${platform}")
+        #options+=("-DBUILD_BOARD_TARGET=${board_target}")
+        options+=("-DBUILD_TARGET=${target}")
+        options+=("-DRT_PATCH=ON")
+        case "${OT_CMAKE_NINJA_TARGET}" in
+            ot-cli-mtd)
+                cd ${OT_SRCDIR}/openthread && git checkout thread-reference-20230706 && cd ${OT_SRCDIR}
+                ;;
+            ot-rcp)
+                case "${board_target}" in
+                    rtl8771htv)
+                        options+=("-DOT_NCP_VENDOR_HOOK_SOURCE=$PWD/src/${platform}/example_vendor_hook.cpp")
+                        cd ${OT_SRCDIR}/openthread && git reset --hard HEAD && git checkout 2aeb8b8 && git apply ../vendor/bee3plus/thread-reference-20230706.patch && cd ${OT_SRCDIR}
+                        ;;
+                    *)
+                        cd ${OT_SRCDIR}/openthread && git checkout 2aeb8b8 && cd ${OT_SRCDIR}
+                        ;;
+                esac
+                options+=("-DOT_DNSSD_SERVER=ON -DOT_SRP_SERVER=ON")
+                case "${build_type}" in
+                    dev)
+                        ;;
+                esac
+                ;;
+            *)
                 ;;
         esac
         options+=("-DOT_CMAKE_NINJA_TARGET=${OT_CMAKE_NINJA_TARGET}")
@@ -155,6 +204,18 @@ main()
     pre_build
     build "${options[@]}"
     post_build
+
+    if [ "${OT_CMAKE_NINJA_TARGET}" == "ot-rcp" ] && [ ${board_target} == "rtl8752h" ];then
+        grep "__libbee3plus_internal_length" ${OT_SRCDIR}/build/ot-rcp.map
+        grep "__libbee3plus_peripheral_length" ${OT_SRCDIR}/build/ot-rcp.map
+        grep "__libopenthread_bee3plus_length" ${OT_SRCDIR}/build/ot-rcp.map
+        grep "__libopenthread_radio_length" ${OT_SRCDIR}/build/ot-rcp.map
+        grep "__libopenthread_rcp_length" ${OT_SRCDIR}/build/ot-rcp.map
+        grep "__libopenthread_spinel_rcp_length" ${OT_SRCDIR}/build/ot-rcp.map
+        grep "__libopenthread_hdlc_length" ${OT_SRCDIR}/build/ot-rcp.map
+        grep "__rw_length" ${OT_SRCDIR}/build/ot-rcp.map
+        grep "__bss_length__" ${OT_SRCDIR}/build/ot-rcp.map
+    fi
 }
 
 main "$@"

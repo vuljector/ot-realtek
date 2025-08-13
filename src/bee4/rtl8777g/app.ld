@@ -47,9 +47,9 @@ SECTIONS
     {
         __flash_text_start__ = .;
         *(.image_entry)
-        *(EXCLUDE_FILE (*librtl87x2g_sdk.a:*log_retarget.o *libbee4-internal.a:*.obj *libopenthread-bee4.a:*.obj) .text*)
+        *(EXCLUDE_FILE (*librtl87x2g_sdk.a:*log_retarget.o *libbee4-internal.a:*.obj *libopenthread-bee4.a:*alarm.c.obj *libopenthread-bee4.a:*entropy.c.obj *libopenthread-bee4.a:*flash.c.obj *libopenthread-bee4.a:*logging.c.obj *libopenthread-bee4.a:*misc.c.obj *libopenthread-bee4.a:*radio.c.obj *libopenthread-bee4.a:*system.c.obj *libopenthread-bee4.a:*uart.c.obj *libopenthread-bee4.a:*zb_main.c.obj *libopenthread-bee4.a:*thread_task.c.obj *libopenthread-bee4.a:*dbg_printf.c.obj *libopenthread-bee4.a:*kvmgr.c.obj *libopenthread-bee4.a:*matter_kvs.c.obj) .text*)
         . = ALIGN(4);
-        *(EXCLUDE_FILE (*librtl87x2g_sdk.a:*log_retarget.o *libbee4-internal.a:*.obj *libopenthread-bee4.a:*.obj) .rodata*)
+        *(EXCLUDE_FILE (*librtl87x2g_sdk.a:*log_retarget.o *libbee4-internal.a:*.obj *libopenthread-bee4.a:*alarm.c.obj *libopenthread-bee4.a:*entropy.c.obj *libopenthread-bee4.a:*flash.c.obj *libopenthread-bee4.a:*logging.c.obj *libopenthread-bee4.a:*misc.c.obj *libopenthread-bee4.a:*radio.c.obj *libopenthread-bee4.a:*system.c.obj *libopenthread-bee4.a:*uart.c.obj *libopenthread-bee4.a:*zb_main.c.obj *libopenthread-bee4.a:*thread_task.c.obj *libopenthread-bee4.a:*dbg_printf.c.obj *libopenthread-bee4.a:*kvmgr.c.obj *libopenthread-bee4.a:*matter_kvs.c.obj) .rodata*)
         . = ALIGN(4);
         * (.isr.text)
         * (.app.flash.text)
@@ -118,7 +118,19 @@ SECTIONS
         * (.app.ram.text)
         *librtl87x2g_sdk.a:*log_retarget.o (.text* .rodata*)
         *libbee4-internal.a:*.obj (.text* .rodata*)
-        *libopenthread-bee4.a:*.obj (.text* .rodata*)
+        *libopenthread-bee4.a:*alarm.c.obj (.text* .rodata*)
+        *libopenthread-bee4.a:*entropy.c.obj (.text* .rodata*)
+        *libopenthread-bee4.a:*flash.c.obj (.text* .rodata*)
+        *libopenthread-bee4.a:*logging.c.obj (.text* .rodata*)
+        *libopenthread-bee4.a:*misc.c.obj (.text* .rodata*)
+        *libopenthread-bee4.a:*radio.c.obj (.text* .rodata*)
+        *libopenthread-bee4.a:*system.c.obj (.text* .rodata*)
+        *libopenthread-bee4.a:*uart.c.obj (.text* .rodata*)
+        *libopenthread-bee4.a:*zb_main.c.obj (.text* .rodata*)
+        *libopenthread-bee4.a:*thread_task.c.obj (.text* .rodata*)
+        *libopenthread-bee4.a:*dbg_printf.c.obj (.text* .rodata*)
+        *libopenthread-bee4.a:*kvmgr.c.obj (.text* .rodata*)
+        *libopenthread-bee4.a:*matter_kvs.c.obj (.text* .rodata*)
         __enter_iram_ns_ro_end__ = .;
         __enter_iram_ns_rw_start__ = .;
         *(.data*)

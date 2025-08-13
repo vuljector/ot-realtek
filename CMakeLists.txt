@@ -29,22 +29,14 @@
 cmake_minimum_required(VERSION 3.10.2)
 project(ot-realtek VERSION 0.2.0 LANGUAGES C CXX ASM)
 
-if("${OT_CMAKE_NINJA_TARGET}" STREQUAL "matter-cli-ftd" OR "${OT_CMAKE_NINJA_TARGET}" STREQUAL "matter-cli-mtd")
-
-string(FIND "${BUILD_TARGET}" "rtl8777g" FOUND_INDEX)
-if(NOT FOUND_INDEX EQUAL -1)
-set(RT_PLATFORM "bee4" CACHE STRING "")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DBOARD_RTL8777G")
-endif()
-
-set(LD_FILE "${CMAKE_CURRENT_SOURCE_DIR}/src/${RT_PLATFORM}/${BUILD_TARGET}/app.ld.gen")
-
-endif()
-
 include(script/${BUILD_TYPE}.cmake)
 
 set(RT_PLATFORM_VALUES
     "bee4"
+    "bee3plus"
+    "rtl8852d"
+    "rtl8922d"
+    "bb2ultra"
 )
 set_property(CACHE RT_PLATFORM PROPERTY STRINGS ${RT_PLATFORM_VALUES})
 if(NOT RT_PLATFORM IN_LIST RT_PLATFORM_VALUES)
@@ -52,6 +44,7 @@ if(NOT RT_PLATFORM IN_LIST RT_PLATFORM_VALUES)
 endif()
 
 # OpenThread config
+
 if(${OT_CMAKE_NINJA_TARGET} STREQUAL "matter-cli-ftd" OR ${OT_CMAKE_NINJA_TARGET} STREQUAL "matter-cli-mtd")
 set(OT_PLATFORM "external" CACHE STRING "")
 set(OT_SLAAC ON CACHE BOOL "")
@@ -84,6 +77,8 @@ set(OT_LINK_METRICS_INITIATOR OFF CACHE BOOL "")
 set(OT_LINK_METRICS_SUBJECT ON CACHE BOOL "")
 set(OT_CHANNEL_MONITOR OFF CACHE BOOL "")
 set(OT_CHANNEL_MANAGER OFF CACHE BOOL "")
+elseif(${OT_CMAKE_NINJA_TARGET} STREQUAL "ot-ncp-ftd" OR ${OT_CMAKE_NINJA_TARGET} STREQUAL "ot-ncp-mtd")
+set(OT_PLATFORM "external" CACHE STRING "")
 else()
 set(OT_PLATFORM "external" CACHE STRING "")
 set(OT_SLAAC ON CACHE BOOL "")

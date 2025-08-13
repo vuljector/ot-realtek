@@ -25,6 +25,7 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
+
 #include <locale.h>
 #include <string.h>
 #include <stdlib.h>
@@ -894,7 +895,7 @@ bool system_init(void)
 
     ram_init();
 
-    bool use_psram = get_psram_power_status();
+    bool use_psram = fmc_get_psram_power_status();
 #if (USE_PSRAM == 1)
     if (use_psram == 0)
     {

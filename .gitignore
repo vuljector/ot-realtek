@@ -54,3 +54,9 @@ __pycache__
 # Project-specific generated files
 *.gen
 *.md5
+
+# Sync & modification scripts
+update_sdk.sh
+modify_context.sh
+modify_context_old.sh
+changed_files.log

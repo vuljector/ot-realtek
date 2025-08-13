@@ -104,17 +104,21 @@ void driver_init(void)
  * @note     system handle to judge which pin is wake source
  * @return   void
  */
+volatile uint32_t app_wakeup_reason = APP_WAKEUP_REASON_NONE;
+extern void io_uart_system_wakeup(void);
 RAM_FUNCTION
 void System_Handler(void)
 {
 #if DLPS_EN
-#if defined(BOARD_RTL8777G) && defined(BUILD_MATTER)
+#if defined(BOARD_RTL8777G)
+#if defined(BUILD_MATTER)
     if (System_WakeUpInterruptValue(BUTTON_SW1) == SET)
     {
         //DBG_DIRECT("SW1 Wake up");
         Pad_ClearWakeupINTPendingBit(BUTTON_SW1);
         System_WakeUpPinDisable(BUTTON_SW1);
         matter_gpio_disallow_to_enter_dlps();
+        app_wakeup_reason = APP_WAKEUP_REASON_BUTTON_SW1;
     }
 
     if (System_WakeUpInterruptValue(BUTTON_SW2) == SET)
@@ -123,6 +127,7 @@ void System_Handler(void)
         Pad_ClearWakeupINTPendingBit(BUTTON_SW2);
         System_WakeUpPinDisable(BUTTON_SW2);
         matter_gpio_disallow_to_enter_dlps();
+        app_wakeup_reason = APP_WAKEUP_REASON_BUTTON_SW2;
     }
 
     if (System_WakeUpInterruptValue(BUTTON_SW3) == SET)
@@ -131,6 +136,7 @@ void System_Handler(void)
         Pad_ClearWakeupINTPendingBit(BUTTON_SW3);
         System_WakeUpPinDisable(BUTTON_SW3);
         matter_gpio_disallow_to_enter_dlps();
+        app_wakeup_reason = APP_WAKEUP_REASON_BUTTON_SW3;
     }
 
     if (System_WakeUpInterruptValue(BUTTON_SW4) == SET)
@@ -139,7 +145,12 @@ void System_Handler(void)
         Pad_ClearWakeupINTPendingBit(BUTTON_SW4);
         System_WakeUpPinDisable(BUTTON_SW4);
         matter_gpio_disallow_to_enter_dlps();
+        app_wakeup_reason = APP_WAKEUP_REASON_BUTTON_SW4;
     }
+#endif
+#if (ENABLE_CLI == 1)
+    io_uart_system_wakeup();
+#endif
 #endif
 #endif
 }
@@ -168,22 +179,32 @@ extern void io_uart_dlps_exit(void);
 
 void app_dlps_enter(void)
 {
-    DBG_DIRECT("%s", __func__);
-    io_uart_dlps_enter();
-
-#if defined(BOARD_RTL8777G) && defined(BUILD_MATTER)
+#if defined(BOARD_RTL8777G)
+#if defined(BUILD_MATTER)
     matter_gpio_dlps_enter();
+#endif
+#if (ENABLE_CLI == 1)
+    io_uart_dlps_enter();
+#endif
 #endif
 }
 
+extern bool zbmac_pm_check_inactive(void);
+extern void zbmac_pm_initiate_wakeup(void);
 void app_dlps_exit(void)
 {
-    DBG_DIRECT("%s", __func__);
-    io_uart_dlps_exit();
-
-#if defined(BOARD_RTL8777G) && defined(BUILD_MATTER)
+#if defined(BOARD_RTL8777G)
+#if defined(BUILD_MATTER)
     matter_gpio_dlps_exit();
 #endif
+#if (ENABLE_CLI == 1)
+    io_uart_dlps_exit();
+#endif
+#endif
+    if (zbmac_pm_check_inactive())
+    {
+        zbmac_pm_initiate_wakeup();
+    }
 }
 
 /**
@@ -192,13 +213,19 @@ void app_dlps_exit(void)
 * @return true : allow enter dlps
  * @retval void
 */
+extern POWER_CheckResult io_uart_dlps_check(void);
 RAM_FUNCTION
 POWER_CheckResult app_dlps_check_cb(void)
 {
     POWER_CheckResult ret = dlps_allow;
 
-#if defined(BOARD_RTL8777G) && defined(BUILD_MATTER)
+#if defined(BOARD_RTL8777G)
+#if defined(BUILD_MATTER)
     ret = matter_gpio_dlps_check();
+#endif
+#if (ENABLE_CLI == 1)
+    ret = io_uart_dlps_check();
+#endif
 #endif
 
     return ret;

@@ -82,6 +82,7 @@
 #define ALARM_US	6
 #define ALARM_MS	7
 #define SLEEP		8
+#define WAKEUP		9
 
 void BEE_EventSend(uint8_t event, uint8_t pan_idx);
 
@@ -105,6 +106,7 @@ void BEE_AlarmMilliProcess(otInstance *aInstance, uint8_t pan_idx);
  *
  */
 void BEE_RadioInit(uint8_t pan_idx);
+void BEE_SleepDirect(void);
 
 /**
  * This function performs radio driver processing.
@@ -173,7 +175,7 @@ extern bool_t mac_GrantPHYStatus(void);
 extern void mac_GrantPHYAdjustForBLE(void);
 extern void mac_GrantPHYAdjustForZB(void);
 extern void mac_SetAddrMatchMode_patch(uint8_t mode);
-extern void mac_SetTxNCsmaDetail(bool enable, uint8_t be);
+extern uint32_t mac_SetTxNCsmaDetail(bool enable, uint8_t be);
 extern uint8_t mac_LoadTxNPayload_patch(uint8_t HdrL, uint8_t FrmL, uint8_t *TxFIFO);
 extern void mac_TrigUpperEnc_patch(void);
 extern uint8_t mpan_TrigTxNAtTime_patch(bool_t AckReq, bool_t SecReq, bool_t DoCCA, uint32_t target_us, uint8_t pan_idx);
@@ -201,5 +203,13 @@ bool zbSysPseudoResetWasRequested(void);
 void zbSysProcessDrivers(otInstance *aInstance);
 void zbSysEventSignalPending(void);
 void zbTaskletsSignalPending(otInstance *aInstance);
+
+#define APP_WAKEUP_REASON_NONE          0
+#define APP_WAKEUP_REASON_BUTTON_SW1    1
+#define APP_WAKEUP_REASON_BUTTON_SW2    2
+#define APP_WAKEUP_REASON_BUTTON_SW3    3
+#define APP_WAKEUP_REASON_BUTTON_SW4    4
+#define APP_WAKEUP_REASON_UART_RX       5
+extern volatile uint32_t app_wakeup_reason;
 
 #endif // PLATFORM_SBEE2_H_

@@ -25,12 +25,13 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
+
 #if(1 == BUILD_RCP)
 #ifdef BOARD_RTL8771GUV
 #define VERSION_MAJOR            2
 #define VERSION_MINOR            0
-#define VERSION_REVISION         1
-#define VERSION_BUILDNUM         1
+#define VERSION_REVISION         2
+#define VERSION_BUILDNUM         0
 #elif defined(BOARD_RTL8771GTV)
 #define VERSION_MAJOR            3
 #define VERSION_MINOR            0

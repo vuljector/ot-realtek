@@ -49,6 +49,7 @@
 #include "mac_driver.h"
 #include "mac_driver_mpan.h"
 #include "platform-bee.h"
+#include "pm.h"
 
 /** @defgroup  PERIPH_DEMO_MAIN Peripheral Main
     * @brief Main file to initialize hardware and BT stack and start task scheduling
@@ -143,6 +144,34 @@ void zb_pin_mux_init(void)
     Pinmux_Config(ZB_CLI_UART_TX_PIN, ZB_CLI_UART_TX);
     Pinmux_Config(ZB_CLI_UART_RX_PIN, ZB_CLI_UART_RX);
 #endif
+}
+
+POWER_CheckResult IO_UART_DLPS_Enter_Allowed = POWER_CHECK_PASS;
+POWER_CheckResult io_uart_dlps_check(void)
+{
+    return IO_UART_DLPS_Enter_Allowed;
+}
+
+void io_uart_dlps_allow_enter(void)
+{
+    IO_UART_DLPS_Enter_Allowed = POWER_CHECK_PASS;
+}
+
+void io_uart_dlps_disallow_enter(void)
+{
+    IO_UART_DLPS_Enter_Allowed = POWER_CHECK_FAIL;
+}
+
+extern volatile uint32_t app_wakeup_reason;
+void io_uart_system_wakeup(void)
+{
+    if (System_WakeUpInterruptValue(ZB_CLI_UART_RX_PIN) == SET)
+    {
+        Pad_ClearWakeupINTPendingBit(ZB_CLI_UART_RX_PIN);
+        System_WakeUpPinDisable(ZB_CLI_UART_RX_PIN);
+        IO_UART_DLPS_Enter_Allowed = POWER_CHECK_FAIL;
+        app_wakeup_reason = APP_WAKEUP_REASON_UART_RX;
+    }
 }
 
 void io_uart_dlps_enter(void)
@@ -273,39 +302,6 @@ void zb_task_init(void)
 
 /** @} */ /* End of group PERIPH_DEMO_MAIN */
 
-#include <string.h>
-#include "os_mem.h"
-
-APP_FLASH_TEXT_SECTION void *__wrap__malloc_r(struct _reent *ptr, size_t size)
-{
-    void *mem;
-    mem = os_mem_alloc(RAM_TYPE_DATA_ON, size);
-    return mem;
-}
-
-APP_FLASH_TEXT_SECTION void __wrap__free_r(struct _reent *ptr, void *addr)
-{
-    os_mem_free(addr);
-}
-
-APP_FLASH_TEXT_SECTION void *__wrap__realloc_r(struct _reent *ptr, void *mem, size_t newsize)
-{
-    void *p;
-    if (mem)
-    {
-        os_mem_free(mem);
-    }
-    p = os_mem_alloc(RAM_TYPE_DATA_ON, newsize);
-    return p;
-}
-
-APP_FLASH_TEXT_SECTION void *__wrap__calloc_r(struct _reent *ptr, size_t size, size_t len)
-{
-    void *mem;
-    mem = os_mem_zalloc(RAM_TYPE_DATA_ON, (size * len));
-    return mem;
-}
-
 #define CHECK_STR_UNALIGNED(X, Y) \
     (((uint32_t)(X) & (sizeof (uint32_t) - 1)) | \
      ((uint32_t)(Y) & (sizeof (uint32_t) - 1)))
@@ -435,4 +431,54 @@ void *__wrap_memset(void *dst0, int Val, size_t length)
         while (--t != 0);
 
     return (dst0);
+}
+
+#include <string.h>
+#include "os_mem.h"
+
+APP_FLASH_TEXT_SECTION void *__wrap__malloc_r(struct _reent *ptr, size_t size)
+{
+    void *mem;
+    mem = os_mem_alloc(RAM_TYPE_DATA_ON, size);
+    return mem;
+}
+
+APP_FLASH_TEXT_SECTION void __wrap__free_r(struct _reent *ptr, void *addr)
+{
+    os_mem_free(addr);
+}
+
+APP_FLASH_TEXT_SECTION void *__wrap__realloc_r(struct _reent *ptr, void *mem, size_t newsize)
+{
+    if (!newsize)
+    {
+        if (mem)
+        {
+            os_mem_free(mem);
+        }
+        return NULL;
+    }
+
+    void *p;
+    p = os_mem_alloc(RAM_TYPE_DATA_ON, newsize);
+    if (p)
+    {
+        // WARNING: The size of the original block `mem` is unknown.
+        // Copying `newsize` bytes is only safe if `newsize` is less than or
+        // equal to the original size. If `newsize` is larger, this will
+        // read beyond the bounds of `mem`.
+        if (mem)
+        {
+            __wrap_memcpy(p, mem, newsize);
+            os_mem_free(mem);
+        }
+    }
+    return p;
+}
+
+APP_FLASH_TEXT_SECTION void *__wrap__calloc_r(struct _reent *ptr, size_t size, size_t len)
+{
+    void *mem;
+    mem = os_mem_zalloc(RAM_TYPE_DATA_ON, (size * len));
+    return mem;
 }

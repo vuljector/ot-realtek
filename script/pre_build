@@ -1,3 +1,4 @@
+
 #!/bin/bash
 #
 #  Copyright (c) 2025, The OpenThread Authors.
@@ -26,6 +27,7 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
+
 BUILD_BANK=$1
 BUILD_TARGET=$2
 
