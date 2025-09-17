@@ -3,6 +3,7 @@ list (
         # sdk
         "${REALTEK_SDK_INCPATH}"
         # porting
+        "${PROJECT_SOURCE_DIR}/src/${RT_PLATFORM}"
         "${PROJECT_SOURCE_DIR}/src/${RT_PLATFORM}/${BUILD_TARGET}"
         "${REALTEK_SDK_ROOT}/subsys/matter/vendor"
         "${REALTEK_SDK_ROOT}/subsys/matter/vendor/matter_ble"
