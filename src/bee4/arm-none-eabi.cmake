@@ -34,7 +34,7 @@ set(CMAKE_CXX_COMPILER             arm-none-eabi-g++)
 set(CMAKE_ASM_COMPILER             arm-none-eabi-as)
 set(CMAKE_RANLIB                   arm-none-eabi-ranlib)
 
-set(COMMON_C_FLAGS                 "-mcpu=cortex-m33 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mabi=aapcs -fdata-sections -ffunction-sections -fdiagnostics-color -fshort-wchar -DCONFIG_SOC_SERIES_RTL87X2G -DMBEDTLS_ALLOW_PRIVATE_ACCESS -DCONFIG_RTK_MAIN_FUN")
+set(COMMON_C_FLAGS                 "-mcpu=cortex-m33 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mabi=aapcs -fdata-sections -ffunction-sections -fdiagnostics-color -fshort-wchar -DCONFIG_SOC_SERIES_RTL87X2G -DCONFIG_RTK_MAIN_FUN")
 
 set(CMAKE_C_FLAGS_INIT             "${COMMON_C_FLAGS} -std=gnu99 -Wno-incompatible-pointer-types -Wno-unused-parameter -Wno-unused-function -Wno-discarded-qualifiers")
 set(CMAKE_CXX_FLAGS_INIT           "${COMMON_C_FLAGS} -fno-exceptions -fno-rtti")

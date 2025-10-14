@@ -37,7 +37,8 @@ OT_CMAKE_NINJA_TARGET=${OT_CMAKE_NINJA_TARGET:-}
 is_create_ld_gen()
 {
     local ldgentargets=("rtl8777g" "rtl8777g_s" "evb" "evb_dual" \
-    "rtl8777g_cert" "rtl8777g_test")
+    "rtl8777g_cert" "rtl8777g_test" "rtl8771htv" "rtl8771htv_zboss" \
+    "rtl8752h")
 
     for ldgentarget in "${ldgentargets[@]}"; do
         if [ "${board_target}" == "${ldgentarget}" ]; then
@@ -80,14 +81,14 @@ build()
 pre_build()
 {
     if is_create_ld_gen >/dev/null 2>&1; then
-       ${OT_SRCDIR}/script/pre_build ${BUILD_BANK} ${target}
+       ${OT_SRCDIR}/script/pre_build ${BUILD_BANK} ${target} ${platform}
     fi
 }
 
 post_build()
 {
     if is_create_ld_gen >/dev/null 2>&1; then
-        ${OT_SRCDIR}/script/post_build ${BUILD_BANK} ${OT_CMAKE_NINJA_TARGET}
+        ${OT_SRCDIR}/script/post_build ${BUILD_BANK} ${OT_CMAKE_NINJA_TARGET} ${platform}
         rm -f ${OT_SRCDIR}/src/${platform}/${target}/*.gen
     fi
 }
@@ -95,10 +96,13 @@ post_build()
 set_sdk_path()
 {
    case "${platform}" in
-       bee4)
-           export REALTEK_SDK_PATH="${OT_SRCDIR}/third_party/Realtek/rtl87x2g_sdk"
-           ;;
-       *)
+        bee4)
+            export REALTEK_SDK_PATH="${OT_SRCDIR}/third_party/Realtek/rtl87x2g_sdk"
+            ;;
+        bee3plus)
+            export REALTEK_SDK_PATH="${OT_SRCDIR}/third_party/Realtek/rtl87x2g_sdk"
+            ;;
+        *)
    esac
 }
 
@@ -129,14 +133,22 @@ main()
         options+=("-DBUILD_TARGET=${target}")
         case "${OT_CMAKE_NINJA_TARGET}" in
             ot-cli-ftd | ot-cli-mtd)
-                cd ${OT_SRCDIR}/openthread && git checkout 2aeb8b8 && cd ${OT_SRCDIR}
+                cd ${OT_SRCDIR}/openthread && git checkout 2aeb8b8 && git apply ../openthread_csl_2aeb8b8.patch && cd ${OT_SRCDIR}
                 options+=("-DCMAKE_TOOLCHAIN_FILE=src/${platform}/arm-none-eabi.cmake")
                 options+=("-DENABLE_CLI=ON")
-                case "${build_type}" in
-                    sdk)
-                        options+=("-DOT_EXTERNAL_MBEDTLS=bee4-mbedtls")
-                        ;;
-                esac
+                #case "${build_type}" in
+                #    dev)
+                #        rm -Rf ${OT_SRCDIR}/openthread/third_party/mbedtls/repo
+                #        cd ${OT_SRCDIR}/../mbedtls && tar -zcvf v3.0.0.tar.gz repo && cd ${OT_SRCDIR}
+                #        tar zxvf ${OT_SRCDIR}/../mbedtls/v3.0.0.tar.gz -C ${OT_SRCDIR}/openthread/third_party/mbedtls/
+                #        cp -f ${OT_SRCDIR}/src/bee4/common/common.h ${OT_SRCDIR}/openthread/third_party/mbedtls/repo/library/
+                #        cp -f ${OT_SRCDIR}/src/bee4/common/threading_alt.h ${OT_SRCDIR}/openthread/third_party/mbedtls/repo/include/
+                #        rm ${OT_SRCDIR}/../mbedtls/v3.0.0.tar.gz
+                #         ;;
+                #    sdk)
+                #        options+=("-DOT_EXTERNAL_MBEDTLS=bee4-mbedtls")
+                #        ;;
+                #esac
                 ;;
             ot-ncp-ftd | ot-ncp-mtd)
                 #cd ${OT_SRCDIR}/openthread && git checkout main && git pull && cd ${OT_SRCDIR}
@@ -174,13 +186,13 @@ main()
         options+=("-DRT_PATCH=ON")
         case "${OT_CMAKE_NINJA_TARGET}" in
             ot-cli-mtd)
-                cd ${OT_SRCDIR}/openthread && git checkout thread-reference-20230706 && cd ${OT_SRCDIR}
+                cd ${OT_SRCDIR}/openthread && git reset --hard HEAD && git clean -f -d && git checkout 2aeb8b8 && git apply ../src/bee3plus/thread-reference-20230706.patch && git apply ../openthread_csl_2aeb8b8.patch && cd ${OT_SRCDIR}
                 ;;
             ot-rcp)
                 case "${board_target}" in
                     rtl8771htv)
                         options+=("-DOT_NCP_VENDOR_HOOK_SOURCE=$PWD/src/${platform}/example_vendor_hook.cpp")
-                        cd ${OT_SRCDIR}/openthread && git reset --hard HEAD && git checkout 2aeb8b8 && git apply ../vendor/bee3plus/thread-reference-20230706.patch && cd ${OT_SRCDIR}
+                        cd ${OT_SRCDIR}/openthread && git reset --hard HEAD && git clean -f -d && git checkout 2aeb8b8 && git apply ../src/bee3plus/thread-reference-20230706.patch && cd ${OT_SRCDIR}
                         ;;
                     *)
                         cd ${OT_SRCDIR}/openthread && git checkout 2aeb8b8 && cd ${OT_SRCDIR}
@@ -189,6 +201,7 @@ main()
                 options+=("-DOT_DNSSD_SERVER=ON -DOT_SRP_SERVER=ON")
                 case "${build_type}" in
                     dev)
+                        tar zxvf ${OT_SRCDIR}/script/v3.0.0.tar.gz -C ${OT_SRCDIR}/openthread/third_party/mbedtls/
                         ;;
                 esac
                 ;;
