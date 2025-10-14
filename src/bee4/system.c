@@ -54,18 +54,26 @@ void SBee2Free(void *aPtr)
 #endif
 #endif
 
+extern void zbmac_pm_initiate_wakeup(void);
+APP_RAM_TEXT_SECTION void BEE_RadioExternalWakeup(void)
+{
+    zbmac_pm_initiate_wakeup();
+}
+
 typedef struct
 {
-    uint16_t ev_tail;
-    uint16_t ev_head;
+    volatile uint16_t ev_tail;
+    volatile uint16_t ev_head;
     uint8_t ev_queue[EV_BUF_SIZE];
 } ev_item_t;
 static ev_item_t ev_item[MAX_PAN_NUM];
 
 APP_RAM_TEXT_SECTION void BEE_EventSend(uint8_t event, uint8_t pan_idx)
 {
+    uint32_t s = os_lock();
     ev_item[pan_idx].ev_queue[ev_item[pan_idx].ev_tail] = event;
     ev_item[pan_idx].ev_tail = (ev_item[pan_idx].ev_tail + 1) % EV_BUF_SIZE;
+    os_unlock(s);
 }
 
 int gPlatformPseudoResetLevel = 0;
@@ -189,7 +197,8 @@ static otError ProcessSystemLedState(void *aContext, uint8_t aArgsLength, char *
 #endif
 #endif
 
-static const otCliCommand rtkCommands[] = {
+static const otCliCommand rtkCommands[] =
+{
 #if (XMODEM_ENABLE == 1)
     {"fwupdate", ProcessFirmwareUpdate},
 #endif
@@ -216,6 +225,7 @@ void otSysProcessDrivers(otInstance *aInstance)
         otCliSetUserCommands(rtkCommands, OT_ARRAY_LENGTH(rtkCommands), aInstance);
     }
 #endif
+    BEE_RadioBackoffTimeout(aInstance, 0);
     BEE_RadioRx(aInstance, 0);
 
     while (ev_item[0].ev_head != ev_item[0].ev_tail)
@@ -223,39 +233,43 @@ void otSysProcessDrivers(otInstance *aInstance)
         event = ev_item[0].ev_queue[ev_item[0].ev_head];
         switch (event)
         {
-            case TX_DONE:
+        case TX_START:
+            BEE_RadioTxStart(aInstance, 0);
+            break;
+
+        case TX_DONE:
             BEE_RadioTx(aInstance, 0);
             break;
 
-            case ED_SCAN:
+        case ED_SCAN:
             BEE_RadioEnergyScan(aInstance, 0);
             break;
 
-            case UART_RX:
+        case UART_RX:
             BEE_UartRx();
             break;
 
-            case UART_TX:
+        case UART_TX:
             BEE_UartTx();
             break;
 
-            case ALARM_US:
+        case ALARM_US:
             BEE_AlarmMicroProcess(aInstance, 0);
             break;
 
-            case ALARM_MS:
+        case ALARM_MS:
             BEE_AlarmMilliProcess(aInstance, 0);
             break;
 
-            case SLEEP:
+        case SLEEP:
             BEE_SleepProcess(aInstance, 0);
             break;
 
-            case WAKEUP:
+        case WAKEUP:
             BEE_WakeupProcess(aInstance, 0);
             break;
 
-            default:
+        default:
             break;
         }
         ev_item[0].ev_head = (ev_item[0].ev_head + 1) % EV_BUF_SIZE;
@@ -321,6 +335,7 @@ void zbSysProcessDrivers(otInstance *aInstance)
         otCliSetUserCommands(rtkCommands, OT_ARRAY_LENGTH(rtkCommands), aInstance);
     }
 #endif
+    BEE_RadioBackoffTimeout(aInstance, 1);
     BEE_RadioRx(aInstance, 1);
 
     while (ev_item[1].ev_head != ev_item[1].ev_tail)
@@ -328,39 +343,43 @@ void zbSysProcessDrivers(otInstance *aInstance)
         event = ev_item[1].ev_queue[ev_item[1].ev_head];
         switch (event)
         {
-            case TX_DONE:
+        case TX_START:
+            BEE_RadioTxStart(aInstance, 1);
+            break;
+
+        case TX_DONE:
             BEE_RadioTx(aInstance, 1);
             break;
 
-            case ED_SCAN:
+        case ED_SCAN:
             BEE_RadioEnergyScan(aInstance, 1);
             break;
 
-            case UART_RX:
+        case UART_RX:
             BEE_UartRx();
             break;
 
-            case UART_TX:
+        case UART_TX:
             BEE_UartTx();
             break;
 
-            case ALARM_US:
+        case ALARM_US:
             BEE_AlarmMicroProcess(aInstance, 1);
             break;
 
-            case ALARM_MS:
+        case ALARM_MS:
             BEE_AlarmMilliProcess(aInstance, 1);
             break;
 
-            case SLEEP:
+        case SLEEP:
             BEE_SleepProcess(aInstance, 1);
             break;
 
-            case WAKEUP:
+        case WAKEUP:
             BEE_WakeupProcess(aInstance, 1);
             break;
 
-            default:
+        default:
             break;
         }
         ev_item[1].ev_head = (ev_item[1].ev_head + 1) % EV_BUF_SIZE;

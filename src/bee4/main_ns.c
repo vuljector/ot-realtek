@@ -37,10 +37,6 @@
 #include <gap_bond_le.h>
 #include <profile_server.h>
 #include <gap_msg.h>
-#if F_BT_ANCS_CLIENT_SUPPORT
-#include <profile_client.h>
-#include <ancs.h>
-#endif
 #include "board.h"
 #include "mem_config.h"
 #include "pm.h"
@@ -55,9 +51,6 @@
 #endif
 #include "flash_map.h"
 #include "ftl.h"
-#if FEATURE_TRUSTZONE_ENABLE
-#include "nsc_veneer_customize.h"
-#endif
 
 POWER_CheckResult dlps_allow = POWER_CHECK_PASS;
 
@@ -189,8 +182,6 @@ void app_dlps_enter(void)
 #endif
 }
 
-extern bool zbmac_pm_check_inactive(void);
-extern void zbmac_pm_initiate_wakeup(void);
 void app_dlps_exit(void)
 {
 #if defined(BOARD_RTL8777G)
@@ -201,10 +192,6 @@ void app_dlps_exit(void)
     io_uart_dlps_exit();
 #endif
 #endif
-    if (zbmac_pm_check_inactive())
-    {
-        zbmac_pm_initiate_wakeup();
-    }
 }
 
 /**
@@ -274,12 +261,6 @@ extern void zb_task_init(void);
  */
 int rtk_main(void)
 {
-#if FEATURE_TRUSTZONE_ENABLE
-    uint32_t param = 0;
-    secure_app_function_call(SECURE_APP_FUNCTION_TEST, &param);
-    DBG_DIRECT("param %d", param);
-#endif
-
     if (FEATURE_TRUSTZONE_ENABLE)
     {
         DBG_DIRECT("Non-Secure World: main");

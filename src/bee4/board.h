@@ -49,6 +49,16 @@ extern "C" {
 #include "zb_tst_cfg.h"
 #endif
 
+/*******************************************************
+*                 WDG Config
+*******************************************************/
+#define WATCH_DOG_ENABLE        1     /* set 1 to enable active and dlps watch dog */
+#if(1 == BUILD_RCP)
+#define WATCH_DOG_TIMEOUT_MS    5000  /* unit: ms */
+#else
+#define WATCH_DOG_TIMEOUT_MS    20000 /* unit: ms */
+#endif
+
 #if(1 == BUILD_RCP || 1 == MATTER_ENABLE_CFU)
 /*******************************************************
 *                 CFU Config
@@ -95,12 +105,6 @@ extern "C" {
 #endif
 
 #endif
-
-/*******************************************************
-*                 WDG Config
-*******************************************************/
-#define WATCH_DOG_ENABLE        1    /* set 1 to enable active and dlps watch dog */
-#define WATCH_DOG_TIMEOUT_MS    5000 /* unit: ms */
 
 /*******************************************************
 *                 FTL Address Config

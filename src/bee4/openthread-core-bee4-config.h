@@ -188,7 +188,7 @@
  *
  */
 #ifndef OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
-#define OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD 2000
+#define OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD 300
 #endif
 
 /**
@@ -200,6 +200,19 @@
  */
 #ifndef OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AHEAD
 #define OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AHEAD 12 * 16
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AFTER
+ *
+ * The minimum time (in microseconds) after the MHR start that the radio should be in receive state in order
+ * to properly receive any IEEE 802.15.4 frame. Defaults to the duration of a maximum size frame, plus AIFS,
+ * plus the duration of maximum enh-ack frame. Platforms are encouraged to improve this value for energy
+ * efficiency purposes.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AFTER
+#define OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AFTER 0
 #endif
 
 #ifndef OPENTHREAD_CONFIG_CLI_MAX_USER_CMD_ENTRIES

@@ -70,19 +70,20 @@
 #define EV_BUF_SIZE     16
 #else
 #define RX_BUF_SIZE     8
-#define EV_BUF_SIZE     8
+#define EV_BUF_SIZE     16
 #endif
 
-#define NONE		0
-#define RX_OK		1
-#define TX_DONE		2
-#define ED_SCAN		3
-#define UART_RX		4
-#define UART_TX		5
-#define ALARM_US	6
-#define ALARM_MS	7
-#define SLEEP		8
-#define WAKEUP		9
+#define NONE        0
+#define RX_OK       1
+#define TX_DONE     2
+#define ED_SCAN     3
+#define UART_RX     4
+#define UART_TX     5
+#define ALARM_US    6
+#define ALARM_MS    7
+#define SLEEP       8
+#define WAKEUP      9
+#define TX_START    10
 
 void BEE_EventSend(uint8_t event, uint8_t pan_idx);
 
@@ -119,6 +120,8 @@ void BEE_RadioTx(otInstance *aInstance, uint8_t pan_idx);
 void BEE_RadioEnergyScan(otInstance *aInstance, uint8_t pan_idx);
 void BEE_SleepProcess(otInstance *aInstance, uint8_t pan_idx);
 void BEE_WakeupProcess(otInstance *aInstance, uint8_t pan_idx);
+void BEE_RadioTxStart(otInstance *aInstance, uint8_t pan_idx);
+void BEE_RadioBackoffTimeout(otInstance *aInstance, uint8_t pan_idx);
 
 /**
  * This function initializes the random number service used by OpenThread.
@@ -178,7 +181,8 @@ extern void mac_SetAddrMatchMode_patch(uint8_t mode);
 extern uint32_t mac_SetTxNCsmaDetail(bool enable, uint8_t be);
 extern uint8_t mac_LoadTxNPayload_patch(uint8_t HdrL, uint8_t FrmL, uint8_t *TxFIFO);
 extern void mac_TrigUpperEnc_patch(void);
-extern uint8_t mpan_TrigTxNAtTime_patch(bool_t AckReq, bool_t SecReq, bool_t DoCCA, uint32_t target_us, uint8_t pan_idx);
+extern uint8_t mpan_TrigTxNAtTime_patch(bool_t AckReq, bool_t SecReq, bool_t DoCCA,
+                                        uint32_t target_us, uint8_t pan_idx);
 extern uint32_t mac_BackoffDelay(uint8_t nb);
 extern void mac_GivenTimeDelay(uint64_t target_us);
 extern uint8_t mac_TrigTxEnhAck_patch(bool_t early, bool_t SecReq);
@@ -191,6 +195,7 @@ extern int8_t mac_GetTXPower_patch(void);
 extern void mac_EDScan_begin(uint32_t scan_round);
 extern void mac_EDScan_end(uint8_t *peak_value);
 extern bool mac_GetTxNTermedStatus(void);
+extern bool mac_GetTxEnhAckTermedStatus(void);
 extern uint32_t mac_GetTxMStatus(void);
 extern void mac_PTA_Wrokaround(void);
 int8_t mac_edscan_level2dbm(uint8_t level);
@@ -211,5 +216,13 @@ void zbTaskletsSignalPending(otInstance *aInstance);
 #define APP_WAKEUP_REASON_BUTTON_SW4    4
 #define APP_WAKEUP_REASON_UART_RX       5
 extern volatile uint32_t app_wakeup_reason;
+
+extern void mac_notify_pm_wakeup(uint8_t pan_idx);
+
+static __inline void mac_txnak_priv_hanlder(void)
+{
+}
+extern uint8_t mpan_TrigTxEnhAck(bool_t early, bool_t SecReq, uint8_t pan_idx);
+extern uint8_t mpan_Rx(uint8_t pan_idx);
 
 #endif // PLATFORM_SBEE2_H_

@@ -100,7 +100,7 @@ static void *cdc_out_handle = NULL;
 #if (FEATURE_SUPPORT_CFU && (USE_USB_CDC == USB_TYPE))
 T_CDC_PACKET_DEF cdc_packet;
 #endif
-static uint8_t usb_speed_mode = USB_SPEED_HIGH;
+static uint8_t usb_speed_mode = USB_SPEED_FULL;
 
 
 typedef enum
@@ -476,7 +476,7 @@ void uart_init_internal(void)
 
     usb_spd_cb_register(app_usb_spd_cb);
 
-    T_USB_CORE_CONFIG config = {.speed = USB_SPEED_HIGH, .class_set = {.hid_enable = 0, .uac_enable = 0}};
+    T_USB_CORE_CONFIG config = {.speed = usb_speed_mode, .class_set = {.hid_enable = 0, .uac_enable = 0}};
 
     usb_dm_core_init(config);
 

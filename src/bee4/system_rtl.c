@@ -301,12 +301,17 @@ void common_main(void)
 
 #if (FTL_POOL == 1)
         extern int32_t ftl_pool_init(uint32_t ftl_pool_startAddr, uint32_t ftl_pool_size,
-                                     uint16_t default_module_logicSize);
+                                     uint16_t default_module_logicSize, uint8_t gc_page_thres);
         uint16_t rom_ftl_size = 0xC00;
         uint8_t ret = 0;
+        uint8_t thres = 2; // default thre val
+
+#ifdef FTL_GC_PAGE_THRES_CUSTOMIZED
+        thres = FTL_GC_PAGE_THRES_CUSTOMIZED
+#endif
         ret = ftl_pool_init(flash_nor_get_bank_addr(FLASH_FTL),
                             flash_nor_get_bank_size(FLASH_FTL),
-                            rom_ftl_size);
+                            rom_ftl_size, thres);
         FLASH_PRINT_INFO1("[FTL] init ret=%d", ret);
 #else
         extern uint32_t (*ftl_init)(uint32_t u32PageStartAddr, uint8_t pagenum);

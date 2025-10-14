@@ -98,3 +98,29 @@ void otPlatWakeHost(void)
     // TODO: implement an operation to wake the host from sleep state.
 }
 
+void mac_read_reg(uint32_t addr, uint8_t *value)
+{
+    uint32_t i;
+    uint8_t *pbuf = (uint8_t *)addr;
+
+    for (i = 0; i < 16; i++)
+    {
+        dbg_sprintf((char *)(value + i * 3), "%02x ", pbuf[i]);
+    }
+    value[48] = '\0';
+}
+
+void mac_write_reg(int8_t *addr, uint8_t *value)
+{
+    uint32_t i;
+    uint32_t src;
+
+    src = strtoul((const char *)addr, NULL, 16);
+
+
+    for (i = 0; i < 1; i++, src++)
+    {
+        *(volatile uint8_t *)(src) = strtoul((const char *)(value), (char **)NULL, 16);
+    }
+}
+

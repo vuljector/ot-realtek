@@ -238,7 +238,7 @@ int32_t edscan_level2dbm(int32_t level)
 
 extern uint32_t (*lowerstack_SystemCall)(uint32_t opcode, uint32_t param, uint32_t param1,
                                          uint32_t param2);
-extern void set_zigbee_priority(uint16_t priority, uint16_t priority_min);
+extern void set_zigbee_priority(uint16_t priority, int16_t priority_min);
 extern uint32_t get_zigbee_window_slot_imp(int16_t *prio, int16_t *prio_min);
 extern void (*modem_set_zb_cca_combination)(uint8_t comb);
 
@@ -452,10 +452,7 @@ APP_FLASH_TEXT_SECTION void *__wrap__realloc_r(struct _reent *ptr, void *mem, si
 {
     if (!newsize)
     {
-        if (mem)
-        {
-            os_mem_free(mem);
-        }
+        os_mem_free(mem);
         return NULL;
     }
 
@@ -463,10 +460,6 @@ APP_FLASH_TEXT_SECTION void *__wrap__realloc_r(struct _reent *ptr, void *mem, si
     p = os_mem_alloc(RAM_TYPE_DATA_ON, newsize);
     if (p)
     {
-        // WARNING: The size of the original block `mem` is unknown.
-        // Copying `newsize` bytes is only safe if `newsize` is less than or
-        // equal to the original size. If `newsize` is larger, this will
-        // read beyond the bounds of `mem`.
         if (mem)
         {
             __wrap_memcpy(p, mem, newsize);
