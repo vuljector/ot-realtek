@@ -39,7 +39,7 @@ target_link_directories(openthread-bee4
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/${BUILD_TARGET}
         ${OT_REALTEK_ROOT}/lib/${RT_PLATFORM}/${BUILD_TARGET_VALID}
-        ${REALTEK_SDK_ROOT}/lib/${RT_PLATFORM}/${BUILD_TARGET_VALID}
+        ${REALTEK_SDK_ROOT}/lib/${RT_PLATFORM}
         ${REALTEK_SDK_ROOT}/subsys/lwip/for_matter/lib
 )
 
