@@ -498,7 +498,7 @@ static void dataDeinit(uint8_t pan_idx)
     os_sem_delete(radio_inst[pan_idx].radio_done);
 }
 
-/* when the upper layer protocol stack enable or disable the MAC functionthe,
+/* when the upper layer protocol stack enable or disable the MAC function,
    this callback function should be called to maintain power management state */
 void __attribute__((weak)) mac_enable_ctrol_callback(uint8_t pan_idx, uint8_t isEnable)
 {
@@ -2619,10 +2619,6 @@ static void handleEnhAckTx(int pan_idx, uint64_t now)
     int8_t rssi = 0; // Default RSSI value
     uint8_t lqi = 0; // Default LQI value
 
-//#if OPENTHREAD_CONFIG_WAKEUP_END_DEVICE_ENABLE
-#if 0
-    mac_SetTxEnhAckPending(radio_inst[pan_idx].enhack_frm_len);
-#else
 #if OPENTHREAD_CONFIG_MLE_LINK_METRICS_SUBJECT_ENABLE
     if (radio_inst[pan_idx].enhAckProbingDataLen > 0)
     {
@@ -2637,7 +2633,6 @@ static void handleEnhAckTx(int pan_idx, uint64_t now)
     }
 #endif
     handleEnhAckTransmission(pan_idx, now, rssi, lqi);
-#endif
 }
 
 APP_RAM_TEXT_SECTION void rxely_handler(uint8_t pan_idx, uint32_t arg)

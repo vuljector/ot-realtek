@@ -282,8 +282,11 @@ void otPlatAlarmMilliStop(otInstance *aInstance)
 uint16_t otPlatTimeGetXtalAccuracy(void)
 {
 #if DLPS_EN
+    // Return maximum value (255 ppm) for DLPS mode to account for
+    // increased clock drift during deep sleep power states
     return 255;
 #else
+    // Return typical crystal accuracy (10 ppm) for non-DLPS mode
     return 10;
 #endif
 }

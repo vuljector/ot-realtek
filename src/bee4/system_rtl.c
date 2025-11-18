@@ -307,7 +307,7 @@ void common_main(void)
         uint8_t thres = 2; // default thre val
 
 #ifdef FTL_GC_PAGE_THRES_CUSTOMIZED
-        thres = FTL_GC_PAGE_THRES_CUSTOMIZED
+        thres = FTL_GC_PAGE_THRES_CUSTOMIZED;
 #endif
         ret = ftl_pool_init(flash_nor_get_bank_addr(FLASH_FTL),
                             flash_nor_get_bank_size(FLASH_FTL),
