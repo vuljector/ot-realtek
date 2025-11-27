@@ -285,7 +285,6 @@ if(${OT_CMAKE_NINJA_TARGET} STREQUAL "ot-rcp" OR matter_enable_cfu)
     if(${BUILD_TYPE} STREQUAL "dev")
         target_compile_definitions(bee4-internal PUBLIC "BUILD_RCP=1")
 
-        
         add_library(rtk_sign
             STATIC
             ./internal/rtk_sign/rtk_sign.c

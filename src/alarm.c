@@ -283,7 +283,12 @@ uint16_t otPlatTimeGetXtalAccuracy(void)
 {
 #if DLPS_EN
     // Return maximum value (255 ppm) for DLPS mode to account for
-    // increased clock drift during deep sleep power states
+    // increased clock drift during deep sleep power states.
+    // The 255 ppm value is chosen as a conservative upper bound based on
+    // worst-case crystal drift observed during DLPS, as specified in the
+    // hardware datasheet, to ensure sufficient timing margin for protocol
+    // operation. This ensures that timing calculations remain robust even
+    // under maximum expected uncertainty in low power states.
     return 255;
 #else
     // Return typical crystal accuracy (10 ppm) for non-DLPS mode

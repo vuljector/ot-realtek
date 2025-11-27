@@ -133,7 +133,12 @@ main()
         options+=("-DBUILD_TARGET=${target}")
         case "${OT_CMAKE_NINJA_TARGET}" in
             ot-cli-ftd | ot-cli-mtd)
-                cd ${OT_SRCDIR}/openthread && git checkout 2aeb8b8 && (git apply ../openthread_csl_2aeb8b8.patch || git apply --check ../openthread_csl_2aeb8b8.patch 2>&1 | grep -q "already applied" || exit 1) && cd ${OT_SRCDIR}
+                cd ${OT_SRCDIR}/openthread && \
+                    git checkout 2aeb8b8 && \
+                    (git apply ../openthread_csl_2aeb8b8.patch || \
+                     git apply --check ../openthread_csl_2aeb8b8.patch 2>&1 | grep -q "already applied" || \
+                     exit 1) && \
+                    cd ${OT_SRCDIR}
                 options+=("-DCMAKE_TOOLCHAIN_FILE=src/${platform}/arm-none-eabi.cmake")
                 options+=("-DENABLE_CLI=ON")
                 ;;
@@ -173,13 +178,30 @@ main()
         options+=("-DRT_PATCH=ON")
         case "${OT_CMAKE_NINJA_TARGET}" in
             ot-cli-mtd)
-                cd ${OT_SRCDIR}/openthread && git reset --hard HEAD && git clean -f -d && git checkout 2aeb8b8 && (git apply ../src/bee3plus/thread-reference-20230706.patch || git apply --check ../src/bee3plus/thread-reference-20230706.patch 2>&1 | grep -q "already applied" || exit 1) && (git apply ../openthread_csl_2aeb8b8.patch || git apply --check ../openthread_csl_2aeb8b8.patch 2>&1 | grep -q "already applied" || exit 1) && cd ${OT_SRCDIR}
+                cd ${OT_SRCDIR}/openthread && \
+                    git reset --hard HEAD && \
+                    git clean -f -d && \
+                    git checkout 2aeb8b8 && \
+                    (git apply ../src/bee3plus/thread-reference-20230706.patch || \
+                     git apply --check ../src/bee3plus/thread-reference-20230706.patch 2>&1 | grep -q "already applied" || \
+                     exit 1) && \
+                    (git apply ../openthread_csl_2aeb8b8.patch || \
+                     git apply --check ../openthread_csl_2aeb8b8.patch 2>&1 | grep -q "already applied" || \
+                     exit 1) && \
+                    cd ${OT_SRCDIR}
                 ;;
             ot-rcp)
                 case "${board_target}" in
                     rtl8771htv)
                         options+=("-DOT_NCP_VENDOR_HOOK_SOURCE=$PWD/src/${platform}/example_vendor_hook.cpp")
-                        cd ${OT_SRCDIR}/openthread && git reset --hard HEAD && git clean -f -d && git checkout 2aeb8b8 && (git apply ../src/bee3plus/thread-reference-20230706.patch || git apply --check ../src/bee3plus/thread-reference-20230706.patch 2>&1 | grep -q "already applied" || exit 1) && cd ${OT_SRCDIR}
+                        cd ${OT_SRCDIR}/openthread && \
+                            git reset --hard HEAD && \
+                            git clean -f -d && \
+                            git checkout 2aeb8b8 && \
+                            (git apply ../src/bee3plus/thread-reference-20230706.patch || \
+                             git apply --check ../src/bee3plus/thread-reference-20230706.patch 2>&1 | grep -q "already applied" || \
+                             exit 1) && \
+                            cd ${OT_SRCDIR}
                         ;;
                     *)
                         cd ${OT_SRCDIR}/openthread && git checkout 2aeb8b8 && cd ${OT_SRCDIR}

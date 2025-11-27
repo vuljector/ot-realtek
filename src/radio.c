@@ -93,7 +93,6 @@
 #define IMMACK_DURATION_US    352          ///< 5B SRHR + 1B PHR + 2B MHR + 1B SEQ + 2B FCS = 11 Bytes * 2 Symbol * 16 us = 352 us
 #define EXTRA_PROTECTION_EN   0
 #define TRANSMIT_RETRIES_EN   1
-//#define OPENTHREAD_CONFIG_WAKEUP_END_DEVICE_ENABLE 1
 
 #define TX_BACKOFF_USE_MS_ALARM 0
 #define TX_BACKOFF_USE_US_ALARM 1
@@ -183,14 +182,11 @@ typedef struct
 
 #if defined(WAIT_ACK_TX_DONE_EN) && (WAIT_ACK_TX_DONE_EN == 1)
     mac_timer_handle_t *sWaitAckTxDoneTimer;
-    //volatile uint64_t sWaitAckTxDoneTimestamp; // To prevent the timer from not executing correctly
 #endif
 
 #if defined(DLPS_EN) && (DLPS_EN == 1)
     mac_timer_handle_t *sWaitRxPendingDataTimer;
-    //volatile uint64_t sWaitRxPendingDataTimestamp; // To prevent the timer from not executing correctly
 #endif
-    //volatile uint64_t sWaitScheduledRxWindowTimestamp;
     volatile uint64_t dbg_exit_dlps;
     bool sDisabled;
     otRadioState sState;
@@ -453,10 +449,6 @@ static void dataInit(uint8_t pan_idx)
     radio_inst[pan_idx].sDisabled = true;
     radio_inst[pan_idx].sStayAwake_b.rxOnWhenIdle = true;
     radio_inst[pan_idx].sTransmitFrame.mPsdu = &radio_inst[pan_idx].sTransmitPsdu[MAC_FRAME_TX_HDR_LEN];
-
-    /*#if OPENTHREAD_CONFIG_WAKEUP_END_DEVICE_ENABLE
-        radio_inst[pan_idx].sCstPeriod = 40000;
-    #endif*/
 
 #if OPENTHREAD_CONFIG_MAC_HEADER_IE_SUPPORT
     radio_inst[pan_idx].sTransmitFrame.mInfo.mTxInfo.mIeInfo = &radio_inst[pan_idx].sTransmitIeInfo;
@@ -1560,25 +1552,6 @@ void BEE_SleepProcess(otInstance *aInstance, uint8_t pan_idx)
     pm_check_inactive("BEE_SleepProcess", true);
 #endif
 
-    //now = otPlatTimeGet();
-    /*if (radio_inst[pan_idx].sStayAwake_b.waitRxPendingData == 1 && now > radio_inst[pan_idx].sWaitRxPendingDataTimestamp)
-    {
-        otLogWarnPlat("Warning: waitRxPendingData timeout %llu", now - radio_inst[pan_idx].sWaitRxPendingDataTimestamp);
-        radio_inst[pan_idx].sStayAwake_b.waitRxPendingData = 0;
-    }*/
-
-    /*if (radio_inst[pan_idx].sStayAwake_b.waitScheduledRxWindow == 1 && now > radio_inst[pan_idx].sWaitScheduledRxWindowTimestamp)
-    {
-        otLogWarnPlat("Warning: waitScheduledRxWindow timeout %llu", now - radio_inst[pan_idx].sWaitScheduledRxWindowTimestamp);
-        radio_inst[pan_idx].sStayAwake_b.waitScheduledRxWindow = 0;
-    }*/
-
-    /*if (radio_inst[pan_idx].sStayAwake_b.waitAckTxDone == 1 && now > radio_inst[pan_idx].sWaitAckTxDoneTimestamp)
-    {
-        otLogWarnPlat("Warning: waitAckTxDone timeout %llu", now - radio_inst[pan_idx].sWaitAckTxDoneTimestamp);
-        radio_inst[pan_idx].sStayAwake_b.waitAckTxDone = 0;
-    }*/
-
     s = os_lock();
     now = otPlatTimeGetWithBTUS(&now_btus);
 
@@ -1774,8 +1747,6 @@ bool readFrame(rx_item_t *item, uint8_t pan_idx);
 void BEE_RadioRx(otInstance *aInstance, uint8_t pan_idx)
 {
     rx_item_t *rx_item;
-    //fc_t *p_fc;
-    uint8_t process_cnt = 0;
 
     while (radio_inst[pan_idx].rx_head != radio_inst[pan_idx].rx_tail)
     {
