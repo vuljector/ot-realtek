@@ -110,17 +110,18 @@ void mac_read_reg(uint32_t addr, uint8_t *value)
     value[48] = '\0';
 }
 
-void mac_write_reg(int8_t *addr, uint8_t *value)
+void mac_write_reg(const char *addr, const char *value)
 {
-    uint32_t i;
-    uint32_t src;
+    uint32_t dest_addr;
+    uint8_t write_val;
 
-    src = strtoul((const char *)addr, NULL, 16);
+    /* Parse hexadecimal address string (e.g., "0x40000000") */
+    dest_addr = strtoul(addr, NULL, 16);
 
+    /* Parse hexadecimal value string (e.g., "0xFF") */
+    write_val = (uint8_t)strtoul(value, NULL, 16);
 
-    for (i = 0; i < 1; i++, src++)
-    {
-        *(volatile uint8_t *)(src) = strtoul((const char *)(value), (char **)NULL, 16);
-    }
+    /* Write single byte to the specified memory address */
+    *(volatile uint8_t *)(dest_addr) = write_val;
 }
 

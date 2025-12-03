@@ -150,7 +150,7 @@ extern void enter_to_cfu_mode(const uint8_t *data, uint8_t data_len);
 #endif
 extern void mac_PTA_Enable(uint8_t enable);
 extern void mac_read_reg(uint32_t addr, uint8_t *value);
-extern void mac_write_reg(uint8_t *addr, uint8_t *value);
+extern void mac_write_reg(const char *addr, const char *value);
 extern void get_ota_bank_image_version(bool a, IMG_ID b, T_IMAGE_VERSION *c);
 extern uint32_t get_active_bank_image_size_by_img_id(IMG_ID d);
 extern bool rtk_write_config_param(const uint8_t *data, uint8_t data_len);

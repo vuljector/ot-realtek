@@ -1560,14 +1560,18 @@ void BEE_SleepProcess(otInstance *aInstance, uint8_t pan_idx)
     uint64_t tmp_us = (micro_alarm_us[pan_idx] > now) ? micro_alarm_us[pan_idx] : 0;
     uint64_t tmp_tx_backoff = (radio_inst[pan_idx].tx_backoff_pending > now) ?
                               radio_inst[pan_idx].tx_backoff_pending : 0;
+
+    // Merge tx_backoff with the appropriate timer (choose earliest non-zero time)
 #if (TX_BACKOFF_TMR_MODE == TX_BACKOFF_USE_US_ALARM)
-    tmp_us = (tmp_us &&
-              tmp_tx_backoff) ? (tmp_us < tmp_tx_backoff ? tmp_us : tmp_tx_backoff) :
-             (tmp_us ? tmp_us : tmp_tx_backoff);
+    if (tmp_tx_backoff != 0 && (tmp_us == 0 || tmp_tx_backoff < tmp_us))
+    {
+        tmp_us = tmp_tx_backoff;
+    }
 #elif (TX_BACKOFF_TMR_MODE == TX_BACKOFF_USE_MS_ALARM)
-    tmp_ms = (tmp_ms &&
-              tmp_tx_backoff) ? (tmp_ms < tmp_tx_backoff ? tmp_ms : tmp_tx_backoff) :
-             (tmp_ms ? tmp_ms : tmp_tx_backoff);
+    if (tmp_tx_backoff != 0 && (tmp_ms == 0 || tmp_tx_backoff < tmp_ms))
+    {
+        tmp_ms = tmp_tx_backoff;
+    }
 #endif
 
     if (!tmp_ms && !tmp_us)

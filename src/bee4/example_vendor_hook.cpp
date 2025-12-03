@@ -225,7 +225,7 @@ otError NcpBase::VendorSetPropertyHandler(spinel_prop_key_t aPropKey)
         mDecoder.ReadUtf8(wdata);
         src = strtok((char *)wdata, " ");
         value = strtok(NULL, " ");
-        mac_write_reg((uint8_t *)src, (uint8_t *)value);
+        mac_write_reg((const char *)src, (const char *)value);
         break;
 
     case SPINEL_PROP_VENDOR_RTK_CONFIG_WTITE:
